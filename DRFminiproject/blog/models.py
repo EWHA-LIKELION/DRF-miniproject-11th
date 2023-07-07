@@ -1,30 +1,21 @@
 from django.db import models
-from pygments.lexers import get_all_lexers
-from pygments.styles import get_all_styles
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
 
 # Create your models here.
-LEXERS = [item for item in get_all_lexers() if item[1]]
-LANGUAGE_CHOICES = sorted([(item[1][0], item[0]) for item in LEXERS])
-STYLE_CHOICES = sorted([(item, item) for item in get_all_styles()])
 
 class User(AbstractUser):
-    nickname=models.CharField(max_length=10) #닉네임
-    favorite=models.CharField(max_length=50) #최애배우
-    interest=models.CharField(max_length=30) #최애극
+    email=models.EmailField(max_length=100, unique=True)
 
-class Blog(models.Model):
-    type = models.CharField(max_length=200,default='') #공연명
-    title = models.CharField(max_length=200,default='') #게시물 제목
-    date = models.DateTimeField('date published') #게시 날짜
-    body = models.TextField('Content',default='') #본문
-
-    class Meta:
-        ordering = ['date']
+class Post(models.Model):
+    author=models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at=models.DateTimeField(auto_now_add=True)
+    category=models.CharField(null=True, blank=True, max_length=100)
+    title=models.CharField(max_length=200)
+    content=models.TextField()
 
 class Comment(models.Model):
-    post = models.ForeignKey(Blog, related_name='comment', on_delete=models.CASCADE)
-    username = models.CharField(max_length=20)
-    created_at = models.DateTimeField(default=timezone.now)
-    comment_text = models.TextField()
+    author=models.ForeignKey(User, on_delete=models.CASCADE)
+    post=models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comment')
+    created_at=models.DateTimeField(auto_now_add=True)
+    content=models.TextField()
+

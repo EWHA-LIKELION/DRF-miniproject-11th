@@ -1,7 +1,13 @@
+from .views import *
 from django.urls import path
-from blog import views
 
-urlpatterns = [
-    path('blogs/', views.BlogList.as_view()),
-    path('blog/<int:pk>/', views.BlogDetail.as_view()),
+app_name='blog'
+
+urlpatterns=[
+    path('posts/', PostListView.as_view()),
+    path('post/<int:pk>/', PostDetailView.as_view()),
+    path('comments/',CommentView.as_view()),
+    path('comment/<int:pk>/', CommentDetailView.as_view()),
+    path('signup/', SignUpView.as_view()),
+    path('login/', LoginView.as_view()),
 ]

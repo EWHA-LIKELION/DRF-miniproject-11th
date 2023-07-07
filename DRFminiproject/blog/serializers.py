@@ -1,27 +1,45 @@
 from rest_framework import serializers
-from blog.models import Blog, Comment, LANGUAGE_CHOICES, STYLE_CHOICES
+from .models import *
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=User
+        fields=['id','username','email','favorite','password']
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Comment
-        fields = ['id', 'post', 'username', 'created_at','comment_text']
+        model=Comment
+        fields=['id','post','author','content','created_at']
 
-
-class BlogSerializer(serializers.ModelSerializer):
-    comment = CommentSerializer(many=True, read_only=True)
-
+class PostSerializer(serializers.ModelSerializer):
+    comment=CommentSerializer(many=True, read_only=True)
+    
     class Meta:
-        model = Blog
-        fields = ['id', 'type', 'title', 'date', 'body']
+        model=Post
+        fields=['id','title','category','author','content','created_at','comment']
 
     def create(self, validated_data):
-        return Blog.objects.create(**validated_data)
-    def update(self, instance, validated_data):
-        instance.type = validated_data.get('type', instance.type)
-        instance.title = validated_data.get('title', instance.title)
-        instance.date = validated_data.get('date', instance.date)
-        instance.body = validated_data.get('body', instance.body)
-        instance.save()
-        return instance
+        user=User.objects.create(
+            email=validated_data['email'],
+            username=validated_data['username'],
+        )
+        user.set_password(validated_data['password'])
+        user.save()
 
+        return user
+    
+class UserLoginSerializer(serializers.Serializer):
+    email=serializers.CharField(max_length=64)
+    password=serializers.CharField(max_length=128, write_only=True)
 
+    def validate(self, data):
+        email=data.get("email", None)
+        password=data.get("password", None)
+
+        if User.objects.filter(email=email).exists():
+            user=User.objects.get(email=email)
+
+            if not user.check_password(password):
+                raise serializers.ValidationError()
+            else:
+                return user

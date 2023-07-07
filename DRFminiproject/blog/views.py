@@ -1,46 +1,89 @@
-from blog.models import Blog
-from blog.serializers import BlogSerializer
-from django.http import Http404
-from rest_framework.views import APIView
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+from .serializers import *
+from .models import *
+from rest_framework import views
 from rest_framework.response import Response
-from rest_framework import status
 
 # Create your views here.
 
-class BlogList(APIView):
-    def get(self, requst, format=None):
-        blogs = Blog.objects.all()
-        serializer = BlogSerializer(blogs, many=True)
+class PostListView(views.APIView):
+    def get(self, request, format=None):
+        posts=Post.objects.all()
+        serializer=PostSerializer(posts,many=True)
         return Response(serializer.data)
     
     def post(self, request, format=None):
-        serializer = BlogSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, stauts=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class BlogDetail(APIView):
-    def get_object(self, pk):
-        try:
-            return Blog.objects.get(pk=pk)
-        except Blog.DoesNotExist:
-            raise Http404
-        
-    def get(self, request, pk, format=None):
-        blog = self.get_object(pk)
-        serializer = BlogSerializer(blog)
-        return Response(serializer.data)
-    
-    def put(self, request, pk, format=None):
-        blog = self.get_object(pk)
-        serializer = BlogSerializer(blog, data=request.data)
+        serializer=PostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors)
+    
+class PostDetailView(views.APIView):
+    def get(self, request, pk, format=None):
+        post=get_object_or_404(Post,pk=pk)
+        serializer=PostSerializer(post)
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        post=get_object_or_404(Post,pk=pk)
+        serializer=PostSerializer(post, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
     
     def delete(self, request, pk, format=None):
-        blog = self.get_object(pk)
-        blog.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        post=get_object_or_404(Post, pk=pk)
+        post.delete()
+        return Response({"message":"게시물 삭제 성공"})
+        
+    
+class CommentView(views.APIView):
+    def get(self, request, format=None):
+        comments=Comment.objects.all()
+        serializer=CommentSerializer(comments,many=True)
+        return Response(serializer.data)
+    
+    def post(self, request, format=None):
+        serializer=CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+    
+class CommentDetailView(views.APIView):
+    def get(self, request, pk, format=None):
+        comment=get_object_or_404(Comment,pk=pk)
+        serializer=CommentSerializer(comment)
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        comment=get_object_or_404(Comment,pk=pk)
+        serializer=CommentSerializer(comment, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+    
+    def delete(self, request, pk, format=None):
+        comment=get_object_or_404(Comment, pk=pk)
+        comment.delete()
+        return Response({"message":"댓글 삭제 성공"})
+    
+class SignUpView(views.APIView):
+    def post(self,request):
+        serializer=UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message':'회원가입 성공', 'data':serializer.data})
+        return Response({'message':'회원가입 실패', 'error':serializer.errors})
+    
+class LoginView(views.APIView):
+    def post(self,request):
+        serializer=UserLoginSerializer(data=request.data)
+
+        if serializer.is_valid():
+            return Response({"message":"로그인 성공", 'data':serializer.data})
+        return Response({"message":"로그인 실패",'error':serializer.errors})
